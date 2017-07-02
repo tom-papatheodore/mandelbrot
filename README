@@ -1,0 +1,75 @@
+serial:
+	Serial version
+
+step1:
+	Added simple acc directives
+		#pragma acc routine seq
+		#pragma acc parallel loop
+
+	The image array is transferred to the GPU unnecessarily
+
+step2:
+	Added in unstructured data region (enter, exit)
+		#pragma acc enter data create(image[0:3*(image_width*image_height)])
+		#pragma acc exit data delete(image[0:3*(image_width*image_height)])
+
+	Added present clause to acc parallel loop
+		#pragma acc parallel loop present(image[0:3*(image_width*image_height)])
+
+			-> This eliminates data transfer to device
+
+	Added explict host update
+		#pragma acc update self(image[0:3*(image_width*image_height)])
+
+step3:
+	Added block/tile loop to separate image into chunks of rows
+		-> Compute only
+
+	Added separate pragma for "data present" instead of attaching to loop clause
+		#pragma acc data present(image[0:3*(image_width*image_height)])
+		#pragma acc parallel loop
+
+step4:
+	Added blocking of data transfers by moving the "update pragma" inside
+	the block loop and changing bound of image update
+		#pragma acc update self(image[block*(3*block_height*image_width):block_height*(3*image_width)])
+
+step5:
+	Now that computation and data transfers are blocked/tiled, allow for asynchronous
+	work by adding async clauses to the parallel loop and update self pragmas
+		async(block % 2 + 1)
+			-> use modulus to assign blocks to 2 separate cuda streams depending on block id
+			-> the "+1" is to ensure we're not using the default stream
+
+	We must also synchronize before data is accessed (written to file)
+		#pragma acc wait
+
+step6:
+	Compute portion of blocks on each of the 4 GPUs on Summitdev
+
+	Query for # of GPUs
+		int num_gpus = acc_get_num_devices(acc_device_nvidia);
+
+	Add OpenMP parallel region to divde blocks among GPUs
+		#pragma omp parallel
+
+	Assign 1 GPU per OpenMP thread (This requires num_gpus = num_omp_threads)
+	  int omp_thread_id = omp_get_thread_num();
+	  acc_set_device_num(omp_thread_id % num_gpus, acc_device_nvidia);
+
+	Move "acc data create" inside "omp parallel" region so that image array is allocated
+	on each GPU
+		-> Each GPU does not actually need a copy of the entire array, but for now we leave it.
+
+	Add OpenMP parallel loop directive to block loop to divde blocks among GPUs
+		#pragma omp for
+
+	
+	NOTE: This problem is NOT load balanced. Some GPUs have more compute intensive
+	portions of the image to work on.
+
+step7:
+	Balance workload among GPUs
+
+step8:
+	Decompose grid using MPI

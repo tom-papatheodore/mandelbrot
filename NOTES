@@ -1,0 +1,12 @@
+Not sure why image_size = 32768 gives
+
+	18, Generating enter data create(image[:-1073741824])
+
+during compilation. Using smaller size for now...
+
+-> Try different compiler version.
+
+
+--------------------------------------------------------
+
+Need to give explanation of cpu/gpu binding/affinity
