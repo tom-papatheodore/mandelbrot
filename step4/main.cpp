@@ -83,10 +83,10 @@ unsigned int calculate_pixel(int r, int c){
   double x_temp;
 
   // Calculate real values of the complex number C based on the x pixel
-  double x0 = ( (x_pixel_size * c) - x_range / 2.0 ) + (x_pixel_size / 2.0);
+  double x0 = ( (x_pixel_size * c) + x_min ) + (x_pixel_size / 2.0);
 
   // Calculate imaginary values of the complex number C based on the y pixel
-  double y0 = ( (y_pixel_size * r) - y_range / 2.0 ) + (y_pixel_size / 2.0);
+  double y0 = ( (y_pixel_size * r) + y_min ) + (y_pixel_size / 2.0);
 
 	// Determine if complex number C = x0 + iy0 is in the set
   while( (iteration < iteration_max) && ( (x * x + y * y) < radius) ){

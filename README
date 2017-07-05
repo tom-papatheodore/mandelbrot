@@ -1,5 +1,4 @@
-serial:
-	Serial version
+serial: Serial version
 
 step1:
 	Added simple acc directives
